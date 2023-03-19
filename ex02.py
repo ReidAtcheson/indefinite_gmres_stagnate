@@ -5,13 +5,16 @@ import matplotlib.pyplot as plt
 import scipy.sparse.linalg as spla
 
 
+seed=2397
+rng=np.random.default_rng(seed)
 
 
 #Order of GMRES polynomial
-k=4
+k=2
 
 #First fit polynomial (without constant term) to the constant 1
-eigs=np.array([-0.5,-0.3,0.2,0.3,0.4,0.5,1.0])
+#eigs=np.array([-0.5,0.2,0.3,0.4,0.5,1.0])
+eigs=rng.uniform(-1,1,8)
 V=np.zeros((len(eigs),k))
 for i in range(1,k+1):
     V[:,i-1]=eigs**i
@@ -36,7 +39,6 @@ for i in range(1,k+1):
     conv+=c[i-1]*eigs**i
 
 
-convrate=max(abs(1.0-conv))
 
 
 
@@ -63,20 +65,17 @@ plt.legend(['Polynomial','Eigenvalues','Convergence region'])
 #label the box
 #plt.text(0.0,1.0,"Region of convergence",ha='center',va='bottom')
 
-#Place computed convergence rate in top of plot as text for reference
-plt.text(0.0,1.5,f"Convergence rate bound: {convrate:.2e}",ha='center',va='bottom')
-#plt.text(0.0,-1.5,f"Convergence rate bound: {convrate:.2f}",ha='left',va='bottom')
 
 
 
 
 
-seed=2397
-rng=np.random.default_rng(seed)
 D=np.diag(eigs)
 Q,_=np.linalg.qr(rng.random((len(eigs),len(eigs))))
 A=Q @ D @ Q.T
 b=Q @ np.ones(len(eigs))
+
+r=b.copy()
 
 resl=[]
 def callback(xk):
@@ -90,10 +89,11 @@ plt.subplot(2,1,2)
 
 predicted=[]
 for i in range(len(resl)):
-    if convrate<1.0:
-        predicted.append(np.linalg.norm(b)*(convrate**i))
+    if i==0:
+        predicted.append(np.linalg.norm(r))
     else:
-        predicted.append(np.linalg.norm(b))
+        r=r-conv*r
+        predicted.append(np.linalg.norm(r))
 
 #Make room for plot title of bottom subplot
 plt.subplots_adjust(hspace=0.5)
